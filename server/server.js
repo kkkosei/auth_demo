@@ -1,19 +1,18 @@
+// server/server.js
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-import { pool } from "./db.js";
+import cors from "cors";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// テスト用ルート
-app.get("/", async (req, res) => {
-  const result = await pool.query("SELECT NOW()");
-  res.send(`✅ Server is running! Database time: ${result.rows[0].now}`);
-});
+// 認証API
+app.use("/api", authRoutes);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on http://localhost:${process.env.PORT}`);
+});
