@@ -3,6 +3,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../db.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -52,6 +53,20 @@ router.post("/login", async (req, res) => {
     res.json({ token });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: "サーバーエラー" });
+  }
+});
+
+// ログイン済みユーザー情報を返す
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    const user = await pool.query(
+      "SELECT id, name, email FROM users WHERE id = $1",
+      [req.user.id]   // ← token の中に入ってる id
+    );
+
+    res.json(user.rows[0]);
+  } catch (err) {
     res.status(500).json({ error: "サーバーエラー" });
   }
 });
