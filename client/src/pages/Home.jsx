@@ -4,25 +4,18 @@ export default function Home() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/";
-      return;
-    }
-
     fetch("http://localhost:4000/api/me", {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include", // Cookie を送る
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Token invalid");
+      .then(res => {
+        if (!res.ok) throw new Error("not authenticated");
         return res.json();
       })
-      .then((data) => setUser(data))
+      .then(data => setUser(data))
       .catch(() => {
-        localStorage.removeItem("token");
         window.location.href = "/";
       });
-  }, []); //useEffectの第二引数がからであるから、レンダー時に1回だけ動くようになっている
+  }, []);
 
   return (
     <div style={{ margin: "50px" }}>
@@ -32,8 +25,8 @@ export default function Home() {
           <p>{user.name} さん、ログイン中です 🎉</p>
           <button
             onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/";
+              fetch("http://localhost:4000/api/logout", { method: "POST", credentials: "include" })
+                .then(() => window.location.href = "/");
             }}
           >
             ログアウト

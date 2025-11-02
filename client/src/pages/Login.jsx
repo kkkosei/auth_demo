@@ -11,8 +11,8 @@ export default function Login() {
     e.preventDefault();
     const res = await login(email, password);
 
-    if (res.token) {
-      localStorage.setItem("token", res.token);
+    if (res.message === "ログイン成功") {
+      // Cookie がサーバーから自動保存されるので token を保存する必要はない
       alert("ログイン成功！");
       window.location.href = "/home";
     } else {

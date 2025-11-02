@@ -50,12 +50,26 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token });
+
+    res.cookie("token", token, {
+      httpOnly: true,   // JS から読めない → XSS対策
+      secure: false,    // 本番では true（HTTPS 必須）
+      sameSite: "lax",
+    });
+    
+
+    res.json({ message: "ログイン成功" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "サーバーエラー" });
   }
 });
+
+router.post("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "ログアウトしました" });
+});
+
 
 // ログイン済みユーザー情報を返す
 router.get("/me", authenticateToken, async (req, res) => {
