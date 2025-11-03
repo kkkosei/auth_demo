@@ -49,20 +49,60 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "パスワードが違います" });
     }
 
-    const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const accessToken = jwt.sign(
+      { id: user.rows[0].id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    res.cookie("token", token, {
-      httpOnly: true,   // JS から読めない → XSS対策
-      secure: false,    // 本番では true（HTTPS 必須）
+    res.cookie("token", accessToken, {
+      httpOnly: true,
+      secure: false,
       sameSite: "lax",
     });
-    
+
+    //リフレッシュトークンの作成をする
+    const refreshToken = jwt.sign(
+      { id: user.rows[0].id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // 本番は true
+      sameSite: "lax",
+    });
+      
 
     res.json({ message: "ログイン成功" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "サーバーエラー" });
   }
+});
+
+router.post("/refresh", (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) return res.status(401).json({ error: "No refresh token" });
+
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid refresh token" });
+
+    const newAccessToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.cookie("token", newAccessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
+
+    res.json({ message: "access token refreshed" });
+  });
 });
 
 router.post("/logout", (req, res) => {
